@@ -1,0 +1,8 @@
+.DS_Store
+.gradle
+.idea
+gradle
+gradlew
+gradlew.bat
+Phone Book/task/build
+Phone Book/task/out

@@ -1,0 +1,308 @@
+type: edu
+custom_name: stage4
+files:
+- name: src/phonebook/Main.java
+  visible: true
+  text: |
+    package phonebook;
+
+    public class Main {
+        public static void main(String[] args) {
+            System.out.println("Hello World!");
+        }
+    }
+  learner_created: false
+- name: test/PhoneBookTest.java
+  visible: false
+  text: "import org.hyperskill.hstest.stage.StageTest;\nimport org.hyperskill.hstest.testcase.CheckResult;\n\
+    import org.hyperskill.hstest.testcase.TestCase;\n\nimport java.util.ArrayList;\n\
+    import java.util.Arrays;\nimport java.util.List;\nimport java.util.regex.Matcher;\n\
+    import java.util.regex.Pattern;\n\npublic class PhoneBookTest extends StageTest\
+    \ {\n\n    private long timeOnTestStart;\n    \n    @Override\n    public List<TestCase>\
+    \ generate() {\n        timeOnTestStart = System.currentTimeMillis();\n      \
+    \  return Arrays.asList(\n            new TestCase().setTimeLimit(30 * 60 * 1000)\n\
+    \        );\n    }\n    \n    \n    private CheckResult checkPhrases(String reply,\
+    \ String... phrases) {\n        reply = reply.toLowerCase();\n        for (String\
+    \ phrase : phrases) {\n            if (!reply.contains(phrase.toLowerCase()))\
+    \ {\n                return CheckResult.wrong(\"Not found the part `\" + phrase\
+    \ + \"` in your output.\");\n            }\n        }\n        return CheckResult.correct();\n\
+    \    }\n    \n    private List<String> findAll(String reply, String regex) {\n\
+    \        Matcher matcher = Pattern.compile(regex).matcher(reply);\n        List<String>\
+    \ groups = new ArrayList<>();\n        while (matcher.find()) {\n            groups.add(matcher.group());\n\
+    \        }\n        return groups;\n    }\n    \n    private String timeRegex\
+    \ = \"(\\\\d+)\\\\s*min.*?(\\\\d+)\\\\s*sec.*?(\\\\d+)\\\\s*ms\";\n    private\
+    \ Pattern timeRegexPattern = Pattern.compile(timeRegex);\n    \n    private long\
+    \ parseTimestamp(String timestamp) {\n        Matcher matcher = timeRegexPattern.matcher(timestamp);\n\
+    \        if (!matcher.matches() || matcher.groupCount() < 3) {\n            throw\
+    \ new IllegalStateException(\"???Not matches the line \" + timestamp);\n     \
+    \   }\n        int min = Integer.parseInt(matcher.group(1));\n        int sec\
+    \ = Integer.parseInt(matcher.group(2));\n        int ms = Integer.parseInt(matcher.group(3));\n\
+    \        return ms + sec * 1000 + min * 1000 * 60;\n    }\n    \n    \n    \n\
+    \    @Override\n    public CheckResult check(String reply, Object clue) {\n  \
+    \      long realTime = System.currentTimeMillis() - timeOnTestStart;\n       \
+    \ reply = reply.toLowerCase();\n        CheckResult res = checkPhrases(reply,\n\
+    \                \"found\",\n                \"min.\",\n                \"sec.\"\
+    ,\n                \"ms.\",\n                \"sorting time\",\n             \
+    \   \"searching time\",\n                \"linear search\",\n                \"\
+    bubble sort\",\n                \"jump search\",\n                \"quick sort\"\
+    ,\n                \"binary search\",\n                \"hash table\",\n     \
+    \           \"creating time\"\n        );\n        if (!res.isCorrect()) {\n \
+    \           return res;\n        }\n    \n        List<String> stat1 = findAll(reply,\
+    \ \"500 / 500\");\n        List<String> stat2 = findAll(reply, \"500/500\");\n\
+    \    \n        if (stat1.size() + stat2.size() < 4) {\n            return CheckResult.wrong(\"\
+    Your output should contain 4 times the phrase `500 / 500`\");\n        }\n   \
+    \ \n        List<String> timestamps = findAll(reply, timeRegex);\n        if (timestamps.size()\
+    \ != 10) {\n            return CheckResult.wrong(\"Your output should contain\
+    \ 10 timer outputs, but found \"\n                    + timestamps.size());\n\
+    \        }\n        // should not fail..\n        long t1 = parseTimestamp(timestamps.get(0));\n\
+    \        long t2 = parseTimestamp(timestamps.get(1));\n        long t3 = parseTimestamp(timestamps.get(2));\n\
+    \        long t4 = parseTimestamp(timestamps.get(3));\n        // qsort\n    \
+    \    long t5 = parseTimestamp(timestamps.get(4));\n        long t6 = parseTimestamp(timestamps.get(5));\n\
+    \        long t7 = parseTimestamp(timestamps.get(6));\n        // hash table\n\
+    \        long t8 = parseTimestamp(timestamps.get(7));\n        long t9 = parseTimestamp(timestamps.get(8));\n\
+    \        long t10 = parseTimestamp(timestamps.get(9));\n    \n        if (Math.abs(t3\
+    \ + t4 - t2) > 100) {\n            return CheckResult.wrong(\"Your third and fourth\
+    \ timer outputs in total (bubble sorting and searching) \" +\n               \
+    \     \"should be equal to the second (total search time).\");\n        }\n  \
+    \      if (Math.abs(t6 + t7 - t5) > 100) {\n            return CheckResult.wrong(\"\
+    Your 6-th and 7-th timer outputs in total (qsort and searching) \" +\n       \
+    \             \"should be equal to the 5-th (total search time).\");\n       \
+    \ }\n        if (Math.abs(t9 + t10 - t8) > 100) {\n            return CheckResult.wrong(\"\
+    Your 9-th and 10-th timer outputs in total (creating hashtable and searching)\
+    \ \" +\n                    \"should be equal to the 8-th (total search time).\"\
+    );\n        }\n    \n        long estimatedTime = t1 + t2 + t5 + t8;\n       \
+    \ if (realTime < 1000) {\n            return CheckResult.wrong(\"Your program\
+    \ completes too fast. Faster than a second!\");\n        }\n\n        if (Math.abs(estimatedTime\
+    \ - realTime) > estimatedTime * 0.3) {\n            return CheckResult.wrong(\"\
+    Your estimated time is not similar to real time the program works. \" +\n    \
+    \                \"Real time: \" + realTime + \"ms, estimated time: \" + estimatedTime\
+    \ + \"ms\");\n        }\n        \n        if (t8 >= t5) {\n            return\
+    \ CheckResult.wrong(\"Your hashtable works slower, than quick sort + binary search.\"\
+    );\n        }\n        return CheckResult.correct();\n    }\n}\n"
+  learner_created: false
+- name: src/phonebook/Person.java
+  visible: true
+  text: |
+    package phonebook;
+
+
+    import java.util.Comparator;
+
+    public class Person {
+        @Override
+        public String toString() {
+            return "Person{" +
+                    "phoneNumber='" + phoneNumber + '\'' +
+                    ", name='" + name + '\'' +
+                    '}';
+        }
+
+        private String phoneNumber;
+        private String name;
+
+        public String getPhoneNumber() {
+            return phoneNumber;
+        }
+
+        public void setPhoneNumber(String phoneNumber) {
+            this.phoneNumber = phoneNumber;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Person(String phoneNumber, String name) {
+            this.phoneNumber = phoneNumber;
+            this.name = name;
+        }
+
+        public Person() {
+        }
+
+        //Comparator<Person> nameComparator = (p1, p2) -> p1.getName().compareTo(p2.getName());
+    }
+  learner_created: true
+- name: src/phonebook/Util.java
+  visible: true
+  text: |
+    package phonebook;
+
+    import java.util.ArrayList;
+    import java.util.Comparator;
+    import java.util.List;
+
+    public class Util {
+
+     /*   public static void bubleSort(String[] array) {
+            for (int i  = 0; i < array.length - 1; i++) {
+                for (int j = 0; j < array.length - i - 1; j++) {
+                   if (array[j + 1] < array[j]) {
+                        String temp  = array[j];
+                        array[j] = array[j + 1];
+                        array[j + 1] = temp;
+                   }
+                }
+            }
+        }*/
+     static Comparator<Person> nameComparator = Comparator.comparing(Person::getName);
+
+        public static boolean bubbleSort(List<Person> list) {
+            long lo = System.currentTimeMillis();
+            long lt = 0;
+            int listSize = list.size();
+            for (int i  = 0; i < listSize - 1; i++) {
+                for (int j = 0; j < listSize - i - 1; j++) {
+                     if (nameComparator.compare(list.get(j + 1), list.get(j)) < 0) {
+                     Person temp  = list.get(j);
+                     list.set(j, list.get(j + 1));
+                     list.set(j + 1, temp);
+                     }
+                     lt = System.currentTimeMillis();
+                     if (lt - lo > 38000) {
+                         return false;
+                     }
+                }
+            }
+            return true;
+        }
+
+        public static void quickSort(List<Person> list, int left, int right) {
+            if (list == null || list.isEmpty()) {
+                return;
+            }
+            int i = left;
+            int j = right;
+            Person temp;
+            Person pivot = list.get((left + right) / 2);
+            do {
+                while (nameComparator.compare(list.get(i), pivot) < 0 && i < right) {
+                    i++;
+                }
+                while (nameComparator.compare(pivot, list.get(j)) < 0 && j > left) {
+                    j--;
+                }
+                if (i <= j) {
+                    temp = list.get(i);
+                    list.set(i, list.get(j));
+                    list.set(j, temp);
+                    i++;
+                    j--;
+                }
+            } while (i <= j);
+            if (left < j) {
+                quickSort(list, left, j);
+            }
+            if (i < right) {
+                quickSort(list, i, right);
+            }
+        }
+
+        public static int jumpSearch(List<Person> list, Person p) {
+            if (list == null || p == null || list.isEmpty()) {
+                return 0;
+            }
+            int listSize = list.size();
+            if (nameComparator.compare(list.get(0), p ) == 0) {
+                return 1;
+            } else if (listSize == 1) {
+                return 0;
+            } else {
+                int blockLength = (int) Math.floor(Math.sqrt(list.size()));
+
+                for (int i = blockLength; i < listSize; ) {
+                    int comparation = nameComparator.compare(list.get(i), p);
+                    if (comparation == 0) {
+                        return 1;
+                    } else if (comparation > 0) {
+                        List<Person> sublist = list.subList(i - blockLength + 1, i);
+                        return linearSearchOfOnePerson(sublist, p);
+                    } else {
+                        if (i == listSize - 1) {
+                            return 0;
+                        } else if (i + blockLength <= listSize - 1) {
+                            i += blockLength;
+                        } else {
+                            i = listSize - 1;
+                        }
+                    }
+                }
+            }
+            return 0;
+        }
+
+        public static int binarySearchOfOnePerson(List<Person> list, Person p, int left, int right) { // left < right
+            if (list == null || p == null || list.isEmpty()) {
+                return 0;
+            }
+            int i = left;
+            int j = right;
+            Person temp;
+            Person middle = list.get((left + right) / 2);
+            if (nameComparator.compare(middle, p) == 0) {
+                return 1;
+            } else if (nameComparator.compare(p , middle) < 0) {
+                return binarySearchOfOnePerson(list, p, left, (left + right) / 2 - 1);
+            } else {
+                return binarySearchOfOnePerson(list, p, (left + right) / 2 + 1, right);
+            }
+        }
+
+        public static int linearSearchOfOnePerson(List<Person> list, Person p) {
+            if (list == null || p == null || list.isEmpty()) {
+                return 0;
+            }
+            if (list.stream().anyMatch(x -> nameComparator.compare(x, p) == 0)) {
+                return 1;
+            }
+            return 0;
+        }
+
+        public static int linearSearchOfList(List<Person> list, List<Person> listToFind) {
+            int counter = 0;
+            for (Person p : listToFind) {
+                counter += linearSearchOfOnePerson(list, p);
+            }
+            return counter;
+        }
+
+        public static int jumpSearchOfList(List<Person> list, List<Person> listToFind) {
+            int counter = 0;
+            for (Person p : listToFind) {
+                counter += jumpSearch(list, p);
+            }
+            return counter;
+        }
+
+        public static int binarySearchOfList(List<Person> list, List<Person> listToFind) {
+            int counter = 0;
+            for (Person p : listToFind) {
+                counter += binarySearchOfOnePerson(list, p, 0, list.size() - 1);
+            }
+            return counter;
+        }
+
+        public static String formatTime(long milisec) {
+            long min = 0;
+            long sec = 0;
+            min = milisec / 60000;
+            sec = (milisec % 60000) / 1000;
+            milisec = milisec - min * 60000 - sec * 1000;
+            return String.format("%s min. %s sec. %s ms.", min, sec, milisec);
+        }
+    }
+  learner_created: true
+- name: src/phonebook/OutputManager.java
+  visible: true
+  learner_created: true
+feedback_link: https://hyperskill.org/learn/step/7721#comment
+status: Solved
+feedback:
+  message: Well done! You've finished the project. Select a new project on <a href="https://hyperskill.org/projects">JetBrains
+    Academy</a> to continue learning.
+  time: Wed, 20 Jul 2022 17:31:56 UTC
+record: 4
